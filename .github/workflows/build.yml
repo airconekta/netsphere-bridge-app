@@ -2,16 +2,16 @@ name: Build NetSphere Bridge
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repo
@@ -22,23 +22,26 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Nuitka
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install nuitka
+          pip install -r requirements.txt
 
+      # ================= WINDOWS =================
       - name: Build Windows EXE
         if: matrix.os == 'windows-latest'
         run: |
           python -m nuitka ^
             --onefile ^
             --standalone ^
-            --enable-plugin=tk-inter ^
             --windows-console-mode=disable ^
-            --windows-icon-from-ico=descarga.ico ^
+            --enable-plugin=tk-inter ^
+            --include-data-file=descarga.ico=descarga.ico ^
             netsphere_bridge.py
 
-      - name: Build Linux
+      # ================= LINUX =================
+      - name: Build Linux binary
         if: matrix.os == 'ubuntu-latest'
         run: |
           python -m nuitka \
@@ -47,21 +50,23 @@ jobs:
             --enable-plugin=tk-inter \
             netsphere_bridge.py
 
+      # ================= MACOS (.app) =================
       - name: Build macOS (.app)
         if: matrix.os == 'macos-latest'
         run: |
-          python -m nuitka \
+          python3 -m nuitka \
             --standalone \
             --macos-create-app-bundle \
-            --macos-app-icon=netsphere.icns \
+            --macos-app-icon=descarga.ico \
             --enable-plugin=tk-inter \
             netsphere_bridge.py
 
-      - name: Upload artifacts
+      # ================= ARTIFACT =================
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os }}
+          name: netsphere-${{ matrix.os }}
           path: |
-            **/*.exe
-            **/*.app
-            **/dist/**
+            *.exe
+            *.app
+            dist/
