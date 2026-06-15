@@ -1,0 +1,67 @@
+name: Build NetSphere Bridge
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install nuitka
+          pip install -r requirements.txt
+
+      - name: Build Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          python -m nuitka ^
+            --onefile ^
+            --standalone ^
+            --windows-console-mode=disable ^
+            --windows-icon-from-ico=descarga.ico ^
+            --enable-plugin=tk-inter ^
+            "netsphere_bridge.py"
+
+      - name: Build macOS (.app)
+        if: matrix.os == 'macos-latest'
+        run: |
+          python3 -m nuitka \
+            --standalone \
+            --macos-create-app-bundle \
+            --macos-app-icon=netsphere.icns \
+            --enable-plugin=tk-inter \
+            "netsphere_bridge.py"
+
+      - name: Build Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          python3 -m nuitka \
+            --onefile \
+            --standalone \
+            --enable-plugin=tk-inter \
+            "netsphere_bridge.py"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: |
+            **/*.exe
+            **/*.app
+            **/*dist*
