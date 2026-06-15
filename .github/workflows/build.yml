@@ -25,10 +25,10 @@ jobs:
           python-version: "3.11"
 
       # ================= DEBUG FILES =================
-      - name: Show repository structure (DEBUG)
+      - name: Show repository structure
         run: ls -R
 
-      # ================= MACOS FIX SYSTEM DEPS =================
+      # ================= MACOS SYSTEM DEPENDENCIES =================
       - name: Install macOS system deps
         if: matrix.os == 'macos-latest'
         run: |
@@ -41,6 +41,7 @@ jobs:
           pip install nuitka
           pip install -r requirements.txt
           pip install cryptography --only-binary :all:
+          pip install imageio
 
       # ================= WINDOWS BUILD =================
       - name: Build Windows (.exe)
@@ -70,12 +71,12 @@ jobs:
           python -m nuitka \
             --standalone \
             --macos-create-app-bundle \
-            --macos-app-icon=descarga.ico \
+            --macos-app-icon=netsphere.icns \
             --enable-plugin=tk-inter \
             ./netsphere_bridge.py
 
       # ================= UPLOAD ARTIFACTS =================
-      - name: Upload build artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}
