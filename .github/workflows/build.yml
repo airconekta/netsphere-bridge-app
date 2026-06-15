@@ -27,6 +27,14 @@ jobs:
           pip install nuitka
           pip install -r requirements.txt
 
+      - name: Install macOS system deps
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install tcl-tk
+          echo "LDFLAGS=-L/opt/homebrew/opt/tcl-tk/lib" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I/opt/homebrew/opt/tcl-tk/include" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/tcl-tk/lib/pkgconfig" >> $GITHUB_ENV
+
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         run: |
@@ -36,7 +44,7 @@ jobs:
             --windows-console-mode=disable ^
             --windows-icon-from-ico=descarga.ico ^
             --enable-plugin=tk-inter ^
-            "netsphere_bridge.py"
+            netsphere_bridge.py
 
       - name: Build macOS (.app)
         if: matrix.os == 'macos-latest'
@@ -46,7 +54,7 @@ jobs:
             --macos-create-app-bundle \
             --macos-app-icon=netsphere.icns \
             --enable-plugin=tk-inter \
-            "netsphere_bridge.py"
+            netsphere_bridge.py
 
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
@@ -55,7 +63,7 @@ jobs:
             --onefile \
             --standalone \
             --enable-plugin=tk-inter \
-            "netsphere_bridge.py"
+            netsphere_bridge.py
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
