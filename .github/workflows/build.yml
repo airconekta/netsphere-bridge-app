@@ -1,14 +1,14 @@
 name: Build NetSphere Bridge
 
 on:
-  workflow_dispatch:
   push:
+  workflow_dispatch:
 
 jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -25,51 +25,58 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install nuitka
-          pip install -r requirements.txt
+          pip install -r requirements.txt || true
 
-      - name: Install macOS system deps
-        if: matrix.os == 'macos-latest'
+      - name: Show files (DEBUG)
         run: |
-          brew install tcl-tk
-          echo "LDFLAGS=-L/opt/homebrew/opt/tcl-tk/lib" >> $GITHUB_ENV
-          echo "CPPFLAGS=-I/opt/homebrew/opt/tcl-tk/include" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/tcl-tk/lib/pkgconfig" >> $GITHUB_ENV
+          ls -R
 
-      - name: Build Windows
+      # =========================
+      # WINDOWS BUILD (.exe)
+      # =========================
+      - name: Build Windows (.exe)
         if: matrix.os == 'windows-latest'
         run: |
           python -m nuitka ^
             --onefile ^
-            --standalone ^
             --windows-console-mode=disable ^
             --windows-icon-from-ico=descarga.ico ^
             --enable-plugin=tk-inter ^
             netsphere_bridge.py
 
+      # =========================
+      # LINUX BUILD (binary)
+      # =========================
+      - name: Build Linux (binary)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          python -m nuitka \
+            --onefile \
+            --enable-plugin=tk-inter \
+            netsphere_bridge.py
+
+      # =========================
+      # MACOS BUILD (.app)
+      # =========================
       - name: Build macOS (.app)
         if: matrix.os == 'macos-latest'
         run: |
           python3 -m nuitka \
             --standalone \
             --macos-create-app-bundle \
-            --macos-app-icon=netsphere.icns \
+            --macos-app-icon=descarga.ico \
             --enable-plugin=tk-inter \
             netsphere_bridge.py
 
-      - name: Build Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          python3 -m nuitka \
-            --onefile \
-            --standalone \
-            --enable-plugin=tk-inter \
-            netsphere_bridge.py
-
-      - name: Upload artifacts
+      # =========================
+      # Upload artifacts
+      # =========================
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os }}
+          name: netsphere-${{ matrix.os }}
           path: |
-            **/*.exe
-            **/*.app
-            **/*dist*
+            *.exe
+            *.bin
+            *.app
+            *.dist
