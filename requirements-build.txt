@@ -1,0 +1,4 @@
+# Solo para empaquetar .exe con Nuitka (no hace falta para desarrollo)
+nuitka>=2.3
+ordered-set
+zstandard
